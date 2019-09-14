@@ -1,0 +1,126 @@
+C51 COMPILER V9.59.0.0   ANGLE                                                             04/23/2019 16:38:11 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE ANGLE
+OBJECT MODULE PLACED IN Angle.OBJ
+COMPILER INVOKED BY: C:\Users\lsh\Desktop\keil5\C51\BIN\C51.EXE Angle.c LARGE OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEN
+                    -D TABS(2)
+
+line level    source
+
+   1          #include <STC15Wxxxx.H>
+   2          #include "comm.h"
+   3          #include "angle.h"
+   4          #include "pwm.h"
+   5          //-----------------------------------
+   6          //          变量定义
+   7          //-----------------------------------
+   8          bit     busy;                  //忙标志-串口3
+   9          bit     Screen_flag;                         //屏幕刷新使能标志位，100ms一次
+  10          uchar   Re_buf[11];                    //6050模块包数据缓存数区
+  11          uchar   Re_counter = 0;            //6050模块包数据计数变量
+  12          uchar   Rebuf_PID[8];            //上位机PID参数包数据缓存区
+  13          uchar   Screen_count = 0;          //屏幕刷新计数值
+  14          //---------------------------------------------------------
+  15          //   串口初始化：115200bps@24.000MHz 定时器2作波特率发生器
+  16          //   串口1与计算机上位机通信 [P3.0/RXD   P3.1/TXD ]
+  17          //   串口2与MPU6050模块通信  [P1.0/RXD2  P1.1/TXD2]
+  18          //   串口3与串口屏通信       [P0.0/RXD3  P0.1/TXD3]
+  19          //---------------------------------------------------------
+  20          void Uart_Init(void)    
+  21          { 
+  22   1        S2CON = 0x50;   //串口2：8位数据,可变波特率,允许接收
+  23   1        S3CON = 0x10;   //串口3：8位数据,可变波特率,允许接收
+  24   1        S3CON &= 0xBF;    //串口3选择定时器2为波特率发生器
+  25   1            
+  26   1        AUXR |= 0x04;   //定时器2时钟为Fosc,即1T
+  27   1        T2L  = 0xCC;    //设定定时初值
+  28   1        T2H  = 0xFF;    //设定定时初值
+  29   1        AUXR |= 0x10;   //启动定时器2
+  30   1      
+  31   1        IE2 |= 0x08;        //开串口3中断
+  32   1        EA = 1;     //开总中断
+  33   1      }
+  34          //-----------------------------
+  35          //       IO口初始化
+  36          //-----------------------------
+  37          void GPIO_Init(void)
+  38          {
+  39   1                //所有IO口设为准双向
+  40   1        P0M0 = 0x00;P0M1 = 0x00;
+  41   1            P1M0 = 0x00;P1M1 = 0x00;
+  42   1            P2M0 = 0x00;P2M1 = 0x00;
+  43   1            P3M0 = 0x00;P3M1 = 0x00;
+  44   1            P4M0 = 0x00;P4M1 = 0x00;
+  45   1            P5M0 = 0x00;P5M1 = 0x00;     
+  46   1                //设置所需要的IO口为强推输出
+  47   1        P2M0 = 0x0e;P2M1 = 0x00;
+  48   1        P3M0 = 0x80;P3M1 = 0x00;
+  49   1      }
+  50          //----------------------------
+  51          //       串口3发送数据
+  52          //----------------------------
+  53          void SendData(uchar dat)
+  54          {
+C51 COMPILER V9.59.0.0   ANGLE                                                             04/23/2019 16:38:11 PAGE 2   
+
+  55   1          while (busy);                //等待前面的数据发送完成
+  56   1          busy = 1;
+  57   1          S3BUF = dat;                 //写数据到UART3数据寄存器
+  58   1      }
+  59          void SendString(char *s)
+  60          {
+  61   1          while (*s) SendData(*s++);   //检测字符串结束标志
+  62   1      }
+  63          //------------------------------------------
+  64          //串口2中断服务程序  
+  65          //用于解析MPU6050姿态模块传出的参数
+  66          //参数内容：加速度数据、角速度数据、角度数据
+  67          //------------------------------------------
+  68          void Uart2_service() interrupt 8  
+  69          {
+  70   1        if (S2CON & S2RI)               //S2RI位置位
+  71   1        {
+  72   2          S2CON &= ~S2RI;                               //清除S2RI位
+  73   2          Re_buf[Re_counter] = S2BUF;         //串口2数据缓冲区的数据放入接收数组中
+  74   2          if(Re_counter==0&&Re_buf[0]!=0x55) return;    //第0号数据不是帧头，跳过
+  75   2              Re_counter++;                     //数组指针加一
+  76   2              if(Re_counter==11)                            //接收到第11个数据，即一包数据接收完成
+  77   2              {    
+  78   3                    Re_counter=0;                           //清零，准备下一包数据接收       
+  79   3            switch(Re_buf [1])          //判断包类型
+  80   3            {               //加速度包
+  81   4              case 0x53:
+  82   4              Angle_X = ((short)(Re_buf[3]<<8| Re_buf[2]))/32768.0*180-0.03;  //0.03-X轴静态偏差    
+  83   4              Angle_Y = ((short)(Re_buf[5]<<8| Re_buf[4]))/32768.0*180-1.61;  //1.61-Y轴静态偏差    
+  84   4              break;        
+  85   4              default:  break;            
+  86   4            } 
+  87   3              }
+  88   2          }    
+  89   1      }
+  90          //----------------------------
+  91          //    串口3中断服务程序
+  92          //----------------------------
+  93          void Uart3_service()  interrupt 17  
+  94          {
+  95   1          if (S3CON & S3TI)
+  96   1          {
+  97   2              S3CON &= ~S3TI;         //清除S3TI位
+  98   2              busy = 0;               //清忙标志
+  99   2          }
+ 100   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    356    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =     21       3
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      2    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

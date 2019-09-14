@@ -1,0 +1,7 @@
+"Angle.obj",
+"main.obj",
+"pwm.obj",
+"Mode1.obj",
+"key.obj" 
+TO "FLB-PIDtest" 
+RAMSIZE(256) 

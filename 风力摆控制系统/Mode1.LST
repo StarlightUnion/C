@@ -1,0 +1,496 @@
+C51 COMPILER V9.59.0.0   MODE1                                                             04/23/2019 16:38:12 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE MODE1
+OBJECT MODULE PLACED IN Mode1.OBJ
+COMPILER INVOKED BY: C:\Users\lsh\Desktop\keil5\C51\BIN\C51.EXE Mode1.c LARGE OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEN
+                    -D TABS(2)
+
+line level    source
+
+   1          #include <STC15Wxxxx.H>
+   2          #include <math.h>
+   3          #include "comm.h"
+   4          #include "mode.h"
+   5          #include "angle.h"
+   6          #include "pwm.h"
+   7          #include "key.h"
+   8          //------------------------------------------
+   9          //           全局变量定义       
+  10          //------------------------------------------
+  11          M1TypeDef  M1;
+  12          M2TypeDef  M2;        //电机参数结构体
+  13          
+  14          PIDTypdDef  M1PID;
+  15          PIDTypdDef  M2PID;      //PID参数结构体
+  16          
+  17          sbit Mode_led = P5^1;           //串口0中断的进入情况，也即PID运算的执行情况
+  18          sbit Screen_led = P5^2;     //屏幕刷新指示灯
+  19          //-----------------------------------------------
+  20          //定时器0为PID计算提供稳定的中断
+  21          //中断每20ms产生一次
+  22          //即系统的采样率为50sa/s  频率50hz
+  23          //-----------------------------------------------
+  24          void Timer0_Init(void)    //20毫秒@24.000MHz
+  25          {
+  26   1        AUXR &= 0x7F;   //定时器时钟12T模式
+  27   1        TMOD &= 0xF0;   //设置定时器模式
+  28   1        TL0 = 0xC0;     //设置定时初值
+  29   1        TH0 = 0x63;     //设置定时初值
+  30   1        TF0 = 0;      //清除TF0标志
+  31   1        TR0 = 1;      //定时器0开始计时
+  32   1      }
+  33          //-----------------------------------------------
+  34          //   定时器0中断服务程序  //20毫秒@24.000MHz
+  35          //-----------------------------------------------
+  36          void Timer0_service()  interrupt 1  
+  37          {   
+  38   1        Screen_count++;
+  39   1        if(Screen_count == 10)      //100ms计时时间到,屏幕的刷新时间为0.1s
+  40   1        {
+  41   2          Screen_led = ~Screen_led;
+  42   2          Screen_count = 0;
+  43   2          Screen_flag  = 1;
+  44   2        } 
+  45   1      
+  46   1        M1.CurPos = Angle_Y;     //获取当前角度
+  47   1        M2.CurPos = Angle_X;               
+  48   1      
+  49   1        switch(CurMode)          //根据CurMode值选择执行的问题
+  50   1        { 
+  51   2          case 1: Mode_1(); Mode_led =~ Mode_led; break;     //第一问
+  52   2          case 2: Mode_2(); Mode_led =~ Mode_led; break;     //第二问
+  53   2          case 3: Mode_3(); Mode_led =~ Mode_led; break;     //第三问
+  54   2          case 4: Mode_4(); Mode_led =~ Mode_led; break;     //第四问
+C51 COMPILER V9.59.0.0   MODE1                                                             04/23/2019 16:38:12 PAGE 2   
+
+  55   2          case 5: Mode_5(); Mode_led =~ Mode_led; break;     //第五问
+  56   2          case 6: Mode_6(); Mode_led =~ Mode_led; break;     //第六问
+  57   2          default: break;              //第三个发挥要求未做
+  58   2        }     
+  59   1      }
+  60          /*------------------------------------------------*
+  61          //第一问的实现：
+  62          //第一问的要求包含于第二问中（简单起摆）
+  63          //将角度幅值设定为23°，转换为长度即为60cm            //此问不再更改
+  64          //题目要求摆动长度为 > 50cm,达到要求
+  65          //------------------------------------------------*/
+  66          void Mode_1(void)        //待添加
+  67          {
+  68   1        const float priod = 1600.0;                  //单摆周期1800ms const:不可变值
+  69   1        static uint MoveTimeCnt = 0;                 //时间累加变量。实际上此变量只在程序开始时初始化一次
+  70   1        float set_y = 0.0;                   //y轴角度设定值（即PID的跟踪量）
+  71   1        float A = 0.0;                     //摆幅（A代表摆动角度幅值,单位：度），不是摆动幅度值
+  72   1        float Normalization = 0.0;                 //归一化量
+  73   1        float Omega = 0.0;                   //角速度 
+  74   1          
+  75   1        MoveTimeCnt += 20;                   //20ms计算调整一次
+  76   1        Normalization = (float)MoveTimeCnt / priod;  //单摆周期归一化：即每次运算时时间累计量对单摆周期的占比
+  77   1        Omega = 2.0*3.14159*Normalization;       //Omega归一化，一个摆动周期内的
+  78   1        set_y = 23*sin(Omega);                       //目标值呈正弦规律变化
+  79   1              
+  80   1        PID_M1_SetPoint(set_y);                      //M1设定参数
+  81   1        PID_M1_SetKp(36);              /*----------------------------------------*/
+  82   1        PID_M1_SetKi(0.198);           /*每进一次本函数都是一次独立的PID控制过程 */
+  83   1        PID_M1_SetKd(1100);          /*----------------------------------------*/
+  84   1        PID_M2_SetPoint(0);                  //M2设定参数
+  85   1        PID_M2_SetKp(36);    
+  86   1        PID_M2_SetKi(0.198);    
+  87   1        PID_M2_SetKd(1100);     
+  88   1      
+  89   1        M1.PWM = PID_M1_PosLocCalc(M1.CurPos);     //电机1、3 PID运算
+  90   1        M2.PWM = PID_M2_PosLocCalc(M2.CurPos);       //电机2、4 PID运算
+  91   1      
+  92   1        if(M1.PWM > POWER_MAX) M1.PWM  =  POWER_MAX; //输出限幅
+  93   1        if(M1.PWM < -POWER_MAX) M1.PWM = -POWER_MAX;  
+  94   1        if(M2.PWM > POWER_MAX) M2.PWM  =  POWER_MAX;
+  95   1        if(M2.PWM < -POWER_MAX) M2.PWM = -POWER_MAX;
+  96   1              
+  97   1        MotorMove(M1.PWM,M2.PWM);                     //电机动作  
+  98   1      }
+  99          /*------------------------------------------------*
+ 100          //第二问的实现：
+ 101          //将一个完整的正弦周期(2π)划分成90份:1.8s*50Hz=90
+ 102          //每20ms执行一次PID计算以跟踪目标值          //此问不再更改
+ 103          //题目要求摆幅在30-60cm之间可设置，达到要求             
+ 104          //------------------------------------------------*/
+ 105          void Mode_2(void)
+ 106          {
+ 107   1        const float priod = 1600.0;                  //单摆周期1800ms const:不可变值
+ 108   1        static uint MoveTimeCnt = 0;                 //时间累加变量。实际上此变量只在程序开始时初始化一次
+ 109   1        float set_y = 0.0;                   //y轴角度设定值（即PID的跟踪量）
+ 110   1        float A = 0.0;                     //摆幅（A代表摆动角度幅值,单位：度），不是摆动幅度值
+ 111   1        float Normalization = 0.0;                 //归一化量
+ 112   1        float Omega = 0.0;                   //角速度 
+ 113   1          
+ 114   1        MoveTimeCnt += 20;                   //20ms计算调整一次
+ 115   1        Normalization = (float)MoveTimeCnt / priod;  //单摆周期归一化：即每次运算时时间累计量对单摆周期的占比
+ 116   1        Omega = 2.0*3.14159*Normalization;       //Omega归一化，一个摆动周期内的
+C51 COMPILER V9.59.0.0   MODE1                                                             04/23/2019 16:38:12 PAGE 3   
+
+ 117   1        A = atan((R/70.0f))*57.2958f;                //摆动长度幅值转换为摆动角度幅值，84(cm)为万向节点离地高度，
+             -实际调试下来选取70为佳
+ 118   1        set_y = A*sin(Omega);                        //目标值呈正弦规律变化
+ 119   1              
+ 120   1        PID_M1_SetPoint(set_y);                      //M1设定参数
+ 121   1        PID_M1_SetKp(36);              
+ 122   1        PID_M1_SetKi(0.198);           
+ 123   1        PID_M1_SetKd(1100);     
+ 124   1        PID_M2_SetPoint(0);                  //M2设定参数
+ 125   1        PID_M2_SetKp(36);    
+ 126   1        PID_M2_SetKi(0.198);    
+ 127   1        PID_M2_SetKd(1100);     
+ 128   1      
+ 129   1        M1.PWM = PID_M1_PosLocCalc(M1.CurPos);     //电机1、3 PID运算
+ 130   1        M2.PWM = PID_M2_PosLocCalc(M2.CurPos);       //电机2、4 PID运算
+ 131   1      
+ 132   1        if(M1.PWM > POWER_MAX) M1.PWM  =  POWER_MAX; //输出限幅
+ 133   1        if(M1.PWM < -POWER_MAX) M1.PWM = -POWER_MAX;  
+ 134   1        if(M2.PWM > POWER_MAX) M2.PWM  =  POWER_MAX;
+ 135   1        if(M2.PWM < -POWER_MAX) M2.PWM = -POWER_MAX;
+ 136   1              
+ 137   1        MotorMove(M1.PWM,M2.PWM);                     //电机动作
+ 138   1      }
+ 139          /*------------------------------------------------*
+ 140          //第三问的实现：
+ 141          //角度可设置的摆动（15s之内实现）
+ 142          //利用李萨如图合成思想，X、Y轴两个方向的简谐运动
+ 143          //若两个简谐运动的相位差为0或π，则曲线是直线段    //此问不再更改
+ 144          //摆角于两个简谐运动的振幅有关：
+ 145          //tanθ = A2/A1  -- ψ = 0
+ 146          //tanθ = -A2/A1 -- ψ = π
+ 147          /------------------------------------------------*/
+ 148          void Mode_3(void)
+ 149          {
+ 150   1        const float priod = 1600.0;        //单摆周期1800ms const:不可变值
+ 151   1        static uint MoveTimeCnt = 0;       //时间累加变量。
+ 152   1        float set_x = 0.0;         //X轴角度设定值（即PID的跟踪量）
+ 153   1        float set_y = 0.0;         //Y轴角度设定值（即PID的跟踪量）
+ 154   1        float Ax = 0.0;          //X轴摆幅分量
+ 155   1        float Ay = 0.0;          //Y轴摆幅分量
+ 156   1        float A = 0.0;           //总摆幅：为X、Y轴摆幅的矢量和
+ 157   1        float Normalization = 0.0;       //单摆周期归一化量
+ 158   1        float Omega = 0.0;         //角度归一化量
+ 159   1        
+ 160   1        MoveTimeCnt += 20;           //20ms计算调整一次
+ 161   1        Normalization = (float)MoveTimeCnt / priod;  //单摆周期归一化：即每次运算时时间累计量对单摆周期的占比
+ 162   1        Omega = 2.0*3.14159*Normalization;       //Omega归一化，一个摆动周期内的
+ 163   1        A = atan((R/60.0f))*57.2958f;                    //摆动长度幅值转换为摆动角度幅值，要转换为角度          
+             -                    
+ 164   1        Ax = A*cos(angle*0.017453);                    //计算X轴摆幅分量，换算为弧度
+ 165   1        Ay = A*sin(angle*0.017453);                    //计算Y轴摆幅分量，换算为弧度
+ 166   1        set_x = Ax*sin(Omega);                       //计算X轴目标值
+ 167   1        set_y = Ay*sin(Omega);                   //计算Y轴目标值
+ 168   1          
+ 169   1        PID_M1_SetPoint(set_y);                          //M1设定参数
+ 170   1        PID_M1_SetKp(36);              
+ 171   1        PID_M1_SetKi(0.198);           
+ 172   1        PID_M1_SetKd(1100);          
+ 173   1        PID_M2_SetPoint(set_x);                      //M2设定参数
+ 174   1        PID_M2_SetKp(36);    
+ 175   1        PID_M2_SetKi(0.198);    
+ 176   1        PID_M2_SetKd(1100); 
+C51 COMPILER V9.59.0.0   MODE1                                                             04/23/2019 16:38:12 PAGE 4   
+
+ 177   1        
+ 178   1        M1.PWM = PID_M1_PosLocCalc(M1.CurPos);         //电机1、3 PID运算
+ 179   1        M2.PWM = PID_M2_PosLocCalc(M2.CurPos);           //电机2、4 PID运算
+ 180   1        
+ 181   1        if(M1.PWM > POWER_MAX)  M1.PWM =  POWER_MAX;   //输出限幅
+ 182   1        if(M1.PWM < -POWER_MAX) M1.PWM = -POWER_MAX;      
+ 183   1        if(M2.PWM > POWER_MAX)  M2.PWM =  POWER_MAX;
+ 184   1        if(M2.PWM < -POWER_MAX) M2.PWM = -POWER_MAX;    
+ 185   1      
+ 186   1        MotorMove(M1.PWM,M2.PWM);        //电机动作
+ 187   1      }
+ 188          /*------------------------------------------------------*
+ 189          //第四问的实现：
+ 190          //将X、Y轴设定值都为0，然后PID运算跟踪
+ 191          //在5s内使风摆静止                //此问不再更改
+ 192          //此问的PID参数与其它问不同
+ 193          //------------------------------------------------------*/
+ 194          void Mode_4(void)
+ 195          {
+ 196   1        if(abs(M1.CurPos)<40.0 && abs(M2.CurPos)<40.0)       //X与Y轴角度小于40°才制动
+ 197   1        {   
+ 198   2          PID_M1_SetPoint(0);                        //M1设定参数
+ 199   2          PID_M1_SetKp(18);          
+ 200   2          PID_M1_SetKi(0.01);          
+ 201   2          PID_M1_SetKd(2600);          
+ 202   2          PID_M2_SetPoint(0);                    //M2设定参数
+ 203   2          PID_M2_SetKp(18);    
+ 204   2          PID_M2_SetKi(0.01);   
+ 205   2          PID_M2_SetKd(2600);
+ 206   2            
+ 207   2          M1.PWM = PID_M1_PosLocCalc(M1.CurPos);         //电机1、3 PID运算
+ 208   2          M2.PWM = PID_M2_PosLocCalc(M2.CurPos);         //电机2、4 PID运算
+ 209   2          
+ 210   2          if(M1.PWM > POWER_MAX)  M1.PWM = 1300;
+ 211   2          if(M1.PWM < -POWER_MAX) M1.PWM = -1300;
+ 212   2        
+ 213   2          if(M2.PWM > POWER_MAX)  M2.PWM = 1300;
+ 214   2          if(M2.PWM < -POWER_MAX) M2.PWM = -1300;        //输出限幅
+ 215   2        }
+ 216   1        else  
+ 217   1        {
+ 218   2          M1.PWM = 10L;
+ 219   2          M2.PWM = 10L;                          //角度过大，停机
+ 220   2        } 
+ 221   1        MotorMove(M1.PWM,M2.PWM);                        //电机动作
+ 222   1      }
+ 223          /*-----------------------------------------------------*
+ 224          //第五问的实现：
+ 225          //半径可设置的圆周运动
+ 226          //若两个简谐运动的相位差为π/2或π/2，则曲线是直线段    //此问不再更改
+ 227          // ψ = π/2  ，逆时针转
+ 228          // ψ = 3π/2 ，顺时针转
+ 229          //-----------------------------------------------------*/ 
+ 230          void Mode_5(void)
+ 231          {
+ 232   1        const float priod = 1600.0;                  //单摆周期1600ms 
+ 233   1        static uint MoveTimeCnt = 0;
+ 234   1        float set_x = 0.0;
+ 235   1        float set_y = 0.0;
+ 236   1        float A = 0.0;
+ 237   1        float phase = 0.0;
+ 238   1        float Normalization = 0.0;
+C51 COMPILER V9.59.0.0   MODE1                                                             04/23/2019 16:38:12 PAGE 5   
+
+ 239   1        float Omega = 0.0;
+ 240   1        
+ 241   1        MoveTimeCnt += 20;           
+ 242   1        Normalization = (float)MoveTimeCnt / priod;  
+ 243   1        Omega = 2.0*3.14159*Normalization;              
+ 244   1        A = atan((R/65.0f))*57.2958f;                
+ 245   1        
+ 246   1        if(RoundDir == 0)  phase = 3.141592/2.0;     //逆时针旋转相位差90° （π/2）                   
+ 247   1        else   phase = (3.0*3.141592)/2.0;           //顺时针旋转相位差270°（π/2）
+ 248   1        
+ 249   1        set_x = A*sin(Omega);              //计算X轴摆幅分量，换算为弧度
+ 250   1        set_y = A*sin(Omega+phase);                  //计算Y轴摆幅分量，换算为弧度
+ 251   1         
+ 252   1        PID_M1_SetPoint(set_y);                      //M1设定参数
+ 253   1        PID_M1_SetKp(36);              
+ 254   1        PID_M1_SetKi(0.198);           
+ 255   1        PID_M1_SetKd(1100);          
+ 256   1        PID_M2_SetPoint(set_x);                  //M2设定参数
+ 257   1        PID_M2_SetKp(36);    
+ 258   1        PID_M2_SetKi(0.198);    
+ 259   1        PID_M2_SetKd(1100);      
+ 260   1        
+ 261   1        M1.PWM = PID_M1_PosLocCalc(M1.CurPos);       //电机1、3 PID运算
+ 262   1        M2.PWM = PID_M2_PosLocCalc(M2.CurPos);       //电机2、4 PID运算
+ 263   1        
+ 264   1        if(M1.PWM > POWER_MAX)  M1.PWM =  POWER_MAX;
+ 265   1        if(M1.PWM < -POWER_MAX) M1.PWM = -POWER_MAX;
+ 266   1              
+ 267   1        if(M2.PWM > POWER_MAX)  M2.PWM =  POWER_MAX;
+ 268   1        if(M2.PWM < -POWER_MAX) M2.PWM = -POWER_MAX; //输出限幅   
+ 269   1      
+ 270   1        MotorMove(M1.PWM,M2.PWM);        //电机动作
+ 271   1      }
+ 272          /*------------------------------------------------*
+ 273          //第六问的实现：
+ 274          //画圆抗干扰
+ 275          //包含于第五问中
+ 276          //------------------------------------------------*/
+ 277          void Mode_6(void)
+ 278          {
+ 279   1        const float priod = 1600.0;                  //单摆周期1600ms 
+ 280   1        static uint MoveTimeCnt = 0;
+ 281   1        float set_x = 0.0;
+ 282   1        float set_y = 0.0;
+ 283   1        float A = 0.0;
+ 284   1        float phase = 0.0;
+ 285   1        float Normalization = 0.0;
+ 286   1        float Omega = 0.0;
+ 287   1        
+ 288   1        MoveTimeCnt += 20;           
+ 289   1        Normalization = (float)MoveTimeCnt / priod;  
+ 290   1        Omega = 2.0*3.14159*Normalization;              
+ 291   1        A = atan((R/65.0f))*57.2958f;                
+ 292   1        
+ 293   1        if(RoundDir == 0)  phase = 3.141592/2.0;     //逆时针旋转相位差90° （π/2）                   
+ 294   1        else   phase = (3.0*3.141592)/2.0;           //顺时针旋转相位差270°（π/2）
+ 295   1        
+ 296   1        set_x = A*sin(Omega);              //计算X轴摆幅分量，换算为弧度
+ 297   1        set_y = A*sin(Omega+phase);                  //计算Y轴摆幅分量，换算为弧度
+ 298   1         
+ 299   1        PID_M1_SetPoint(set_y);                      //M1设定参数
+ 300   1        PID_M1_SetKp(36);              
+C51 COMPILER V9.59.0.0   MODE1                                                             04/23/2019 16:38:12 PAGE 6   
+
+ 301   1        PID_M1_SetKi(0.198);           
+ 302   1        PID_M1_SetKd(1100);          
+ 303   1        PID_M2_SetPoint(set_x);                  //M2设定参数
+ 304   1        PID_M2_SetKp(36);    
+ 305   1        PID_M2_SetKi(0.198);    
+ 306   1        PID_M2_SetKd(1100);      
+ 307   1        
+ 308   1        M1.PWM = PID_M1_PosLocCalc(M1.CurPos);       //电机1、3 PID运算
+ 309   1        M2.PWM = PID_M2_PosLocCalc(M2.CurPos);       //电机2、4 PID运算
+ 310   1        
+ 311   1        if(M1.PWM > POWER_MAX)  M1.PWM =  POWER_MAX;
+ 312   1        if(M1.PWM < -POWER_MAX) M1.PWM = -POWER_MAX;
+ 313   1              
+ 314   1        if(M2.PWM > POWER_MAX)  M2.PWM =  POWER_MAX;
+ 315   1        if(M2.PWM < -POWER_MAX) M2.PWM = -POWER_MAX; //输出限幅   
+ 316   1      
+ 317   1        MotorMove(M1.PWM,M2.PWM);        //电机动作
+ 318   1      }
+ 319          //------------------------------------------
+ 320          //       电机1PID参数结构体初始化
+ 321          //   这里的电机1代表实际的电机1号和3号    
+ 322          //------------------------------------------
+ 323          void PID_M1_Init(void)
+ 324          {             //M1
+ 325   1        M1PID.LastError  = 0;     //Error[-1]
+ 326   1        M1PID.PrevError  = 0;     //Error[-2]
+ 327   1        M1PID.Proportion = 0;     //Proportional
+ 328   1        M1PID.Integral   = 0;     //Integral 
+ 329   1        M1PID.Derivative = 0;     //Derivative 
+ 330   1        M1PID.SetPoint   = 0;
+ 331   1        M1PID.SumError   = 0;
+ 332   1      }
+ 333          //------------------------------------------
+ 334          //       电机2PID参数结构体初始化
+ 335          //    这里的电机1代表实际的电机2号和4号 
+ 336          //------------------------------------------
+ 337          void PID_M2_Init(void)
+ 338          {             //M2
+ 339   1        M2PID.LastError  = 0;     //Error[-1]
+ 340   1        M2PID.PrevError  = 0;     //Error[-2]
+ 341   1        M2PID.Proportion = 0;     //Proportional Const
+ 342   1        M2PID.Integral   = 0;     //Integral Const
+ 343   1        M2PID.Derivative = 0;     //Derivative Const
+ 344   1        M2PID.SetPoint   = 0;
+ 345   1        M2PID.SumError   = 0;
+ 346   1      }
+ 347          //------------------------------------------
+ 348          //          电机1PID参数设定    
+ 349          //------------------------------------------
+ 350          void PID_M1_SetPoint(float setpoint)
+ 351          { 
+ 352   1        M1PID.SetPoint = setpoint;    //设 定 目标值：M1、M3
+ 353   1      }
+ 354          void PID_M1_SetKp(float dKpp)
+ 355          { 
+ 356   1        M1PID.Proportion = dKpp;    //设定比例系数：M1、M3
+ 357   1      }
+ 358          void PID_M1_SetKi(float dKii)
+ 359          { 
+ 360   1        M1PID.Integral = dKii;      //设定积分系数：M1、M3
+ 361   1      }
+ 362          void PID_M1_SetKd(float dKdd)
+C51 COMPILER V9.59.0.0   MODE1                                                             04/23/2019 16:38:12 PAGE 7   
+
+ 363          { 
+ 364   1        M1PID.Derivative = dKdd;    //设定微分系数：M1、M3
+ 365   1      }
+ 366          //------------------------------------------
+ 367          //        电机2PID参数设定
+ 368          //------------------------------------------
+ 369          void PID_M2_SetPoint(float setpoint)
+ 370          { 
+ 371   1        M2PID.SetPoint = setpoint;    //设 定 目标值：M2、M4
+ 372   1      }
+ 373          void PID_M2_SetKp(float dKpp)
+ 374          { 
+ 375   1        M2PID.Proportion = dKpp;    //设定比例系数：M2、M4
+ 376   1      }
+ 377          void PID_M2_SetKi(float dKii)
+ 378          { 
+ 379   1        M2PID.Integral = dKii;      //设定积分系数：M2、M4
+ 380   1      }
+ 381          void PID_M2_SetKd(float dKdd)
+ 382          { 
+ 383   1        M2PID.Derivative = dKdd;    //设定微分系数：M2、M4
+ 384   1      }
+ 385          //------------------------------------------
+ 386          //功能：电机1位置式PID计算
+ 387          //参数说明：*****
+ 388          //  入口参数：风摆当前位置（Y轴角度）
+ 389          //    出口参数：电机1和3的PWM量
+ 390          //------------------------------------------
+ 391          int PID_M1_PosLocCalc(float NextPoint)
+ 392          {
+ 393   1            float  iError,dError;   
+ 394   1        iError = M1PID.SetPoint - NextPoint;        //当前误差 = 设定角度 - 实际角度
+ 395   1        M1PID.SumError += iError;       //误差累积（积分）
+ 396   1        if(M1PID.SumError > 2300.0)       //积分限幅
+ 397   1          M1PID.SumError = 2300.0;
+ 398   1        else if(M1PID.SumError < -2300.0)
+ 399   1          M1PID.SumError = -2300.0; 
+ 400   1        dError = iError - M1PID.LastError;      //微分
+ 401   1        M1PID.LastError = iError;       //误差更新
+ 402   1        return(int)  (  M1PID.Proportion   * iError           //离散PID计算 
+ 403   1                        + M1PID.Integral   * M1PID.SumError    
+ 404   1                        + M1PID.Derivative * dError);
+ 405   1      }
+ 406          //------------------------------------------
+ 407          //功能：电机2位置式PID计算
+ 408          //参数说明：*****
+ 409          //    入口参数：风摆当前位置（X轴角度）
+ 410          //    出口参数：电机2和4的PWM量   
+ 411          //------------------------------------------
+ 412          int PID_M2_PosLocCalc(float NextPoint)
+ 413          {
+ 414   1        float  iError,dError;
+ 415   1        iError = M2PID.SetPoint - NextPoint;        //当前误差 = 设定角度 - 实际角度
+ 416   1        M2PID.SumError += iError;       //误差累积（积分）
+ 417   1        if(M2PID.SumError > 2300.0)       //积分限幅
+ 418   1          M2PID.SumError = 2300.0;
+ 419   1        else if(M2PID.SumError < -2300.0)
+ 420   1          M2PID.SumError = -2300.0;
+ 421   1        dError = iError - M2PID.LastError;      //微分
+ 422   1        M2PID.LastError = iError;       //误差更新  
+ 423   1        return(int)(  M2PID.Proportion   * iError             
+ 424   1                      + M2PID.Integral   * M2PID.SumError   //离散PID计算 
+C51 COMPILER V9.59.0.0   MODE1                                                             04/23/2019 16:38:12 PAGE 8   
+
+ 425   1                      + M2PID.Derivative * dError);
+ 426   1      }
+ 427          //------------------------------------------
+ 428          //功能：电机底层驱动函数
+ 429          //参数说明：
+ 430          //pwm1：电机1、3共享，控制Y轴运动（Roll）
+ 431          //pwm2: 电机2、4共享，控制X轴运动（pitch）
+ 432          //出口参数：无
+ 433          //------------------------------------------
+ 434          void MotorMove(long pwm1,long pwm2)
+ 435          {
+ 436   1        if(pwm1 > 0)            /*风摆由正角度开始起摆*/
+ 437   1        {           /*向左摆动（角度为正），误差为正，pid运算结果(pwm1)为正*/
+ 438   2          SetPWM_M1(1L);          /*向右摆动（角度为负），误差为负，pid运算结果(pwm1)为负*/
+ 439   2          SetPWM_M3(pwm1);          /*pwm为正，表示风摆左摆，电机3动作，电机1停机*/
+ 440   2        }           /*pwm为负，表示风摆右摆，电机1动作，电机3停机*/
+ 441   1        else if(pwm1 < 0)       /*硬件情况：*/
+ 442   1        {           /*风摆向左摆，Y轴角度为正*/
+ 443   2          SetPWM_M1(abs(pwm1));   /*风摆向后摆，X轴角度为正*/
+ 444   2          SetPWM_M3(1L);      /*反之*/
+ 445   2        }           /*电机只可动作与停机，无反转功能*/
+ 446   1        if(pwm2 > 0)
+ 447   1        {
+ 448   2          SetPWM_M4(1L);          //电机4停机
+ 449   2          SetPWM_M2(pwm2);      //电机2动作
+ 450   2        }
+ 451   1        else if(pwm2 < 0)
+ 452   1        {
+ 453   2          SetPWM_M4(abs(pwm2));   //电机4动作
+ 454   2          SetPWM_M2(1L);      //电机2停机
+ 455   2        }   
+ 456   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   4022    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =     78     136
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

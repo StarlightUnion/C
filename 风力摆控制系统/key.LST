@@ -1,0 +1,146 @@
+C51 COMPILER V9.59.0.0   KEY                                                               04/23/2019 16:38:12 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE KEY
+OBJECT MODULE PLACED IN key.OBJ
+COMPILER INVOKED BY: C:\Users\lsh\Desktop\keil5\C51\BIN\C51.EXE key.c LARGE OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND 
+                    -TABS(2)
+
+line level    source
+
+   1          #include <STC15Wxxxx.H>
+   2          #include <stdio.h>
+   3          #include "comm.h"
+   4          #include "angle.h"
+   5          #include "key.h"
+   6          
+   7          uint   CurMode = 1;        //执行问题
+   8          bit    RoundDir = 0;           //圆周运动正反转控制
+   9          float  R = 20.0;           //摆动半径(cm)
+  10          float  angle = 0.0;        //摆动角度（第三问）
+  11          //----------------------------
+  12          //      硬件接口定义
+  13          //----------------------------
+  14          sbit Key_ModeChange = P1^7;  //模式切换    （题目切换）
+  15          sbit Key_TurnChange = P2^0;  //转向切换    （圆周运动）
+  16          sbit Key_AngleUp    = P1^6;  //摆动幅度增  （单摆、圆周运动）
+  17          sbit Key_AngleDown  = P1^5;  //摆动幅度减
+  18          sbit Key_DistUp     = P1^4;  //摆动角度增  （任意角单摆运动）
+  19          sbit Key_DistDown   = P1^3;  //摆动角度减
+  20          //----------------------------
+  21          //系统通用延时  @24.000MHz 1ms
+  22          //----------------------------
+  23          void Delay1ms(void)
+  24          {
+  25   1        uchar i, j;
+  26   1        i = 24;
+  27   1        j = 85;
+  28   1        do{ while (--j);} while (--i);
+  29   1      } 
+  30          //----------------------------
+  31          //      键盘扫描函数
+  32          //----------------------------
+  33          void Key_Scan(void)
+  34          {
+  35   1        /*题目切换*/
+  36   1        if(0 == Key_ModeChange)
+  37   1        {
+  38   2          Delay1ms();Delay1ms();
+  39   2          if(0 == Key_ModeChange)
+  40   2          {
+  41   3            CurMode ++;                        //题目变量自增
+  42   3            if(CurMode > 6)  CurMode = 1;          //最高题目6
+  43   3            switch(CurMode)
+  44   3            {
+  45   4              case(1):  SendString("DS24(105,45,'基本要求 1',4,0);\r\n"); break;
+  46   4              case(2):  SendString("DS24(105,45,'基本要求 2',4,0);\r\n"); break;
+  47   4              case(3):  SendString("DS24(105,45,'基本要求 3',4,0);\r\n"); break;
+  48   4              case(4):  SendString("DS24(105,45,'基本要求 4',4,0);\r\n"); break;
+  49   4              case(5):  SendString("DS24(105,45,'发挥要求 1',4,0);\r\n"); break;
+  50   4              case(6):  SendString("DS24(105,45,'发挥要求 2',4,0);\r\n"); break;
+  51   4              default:  break;
+  52   4            } 
+  53   3          }
+  54   2          while(0 == Key_ModeChange);     
+C51 COMPILER V9.59.0.0   KEY                                                               04/23/2019 16:38:12 PAGE 2   
+
+  55   2        }
+  56   1        /*转向切换*/
+  57   1        if(0 == Key_TurnChange)
+  58   1        {
+  59   2          Delay1ms();Delay1ms();
+  60   2          if(0 == Key_TurnChange) 
+  61   2          {
+  62   3            RoundDir =~ RoundDir;
+  63   3            if(RoundDir)  SendString("DS16(215,205,'逆时针',5,0);\r\n");
+  64   3            else          SendString("DS16(215,205,'顺时针',5,0);\r\n");  
+  65   3          }
+  66   2          while(0 == Key_TurnChange);
+  67   2        }
+  68   1        /*摆幅设置,单摆运动和圆周运动都适用*/
+  69   1        if(0 == Key_DistUp)
+  70   1        {
+  71   2          Delay1ms();Delay1ms();
+  72   2          if(0 == Key_DistUp)
+  73   2          {
+  74   3            R ++;          //摆动幅度自增
+  75   3            if(R > 35) R = 35;             //摆幅上限35cm
+  76   3            sprintf(uart3_buf2,"DS16(210,145,' %.1f cm',5,0);\r\n",R*2); 
+  77   3            SendString(uart3_buf2);      //摆幅参数显示
+  78   3          }
+  79   2          while(0 == Key_DistUp);
+  80   2        }
+  81   1        if(0 == Key_DistDown)
+  82   1        {
+  83   2          Delay1ms();Delay1ms();
+  84   2          if(0 == Key_DistDown)
+  85   2          {
+  86   3            R --;          //摆动幅度自减
+  87   3            if(R < 10) R = 10;             //摆幅下限10cm
+  88   3            sprintf(uart3_buf2,"DS16(210,145,' %.1f cm',5,0);\r\n",R*2); 
+  89   3            SendString(uart3_buf2);      //摆幅参数显示
+  90   3          }
+  91   2          while(0 == Key_DistDown);
+  92   2        }
+  93   1        /*摆角设置，仅限于第三问*/
+  94   1        if(0 == Key_AngleUp)
+  95   1        {
+  96   2          Delay1ms();Delay1ms();
+  97   2          if(0 == Key_AngleUp)
+  98   2          {
+  99   3            angle += 30;       //摆动角度增30
+ 100   3            if(angle > 180) angle = 180;   //摆角上限180°
+ 101   3            sprintf(uart3_buf2,"DS16(210,175,' %.1f° ',5,0);\r\n",angle); 
+ 102   3            SendString(uart3_buf2);      //摆角参数显示
+ 103   3          }   
+ 104   2          while(0 == Key_AngleUp);
+ 105   2        }
+ 106   1        if(0 == Key_AngleDown)
+ 107   1        {
+ 108   2          Delay1ms();Delay1ms();
+ 109   2          if(0 == Key_AngleDown)
+ 110   2          {
+ 111   3            angle -= 30;       //摆动角度减30
+ 112   3            if(angle <= 0)   angle = 0;    //摆角下限0°
+ 113   3            sprintf(uart3_buf2,"DS16(210,175,' %.1f° ',5,0);\r\n",angle); 
+ 114   3            SendString(uart3_buf2);      //摆角参数显示
+ 115   3          }
+ 116   2          while(0 == Key_AngleDown);
+C51 COMPILER V9.59.0.0   KEY                                                               04/23/2019 16:38:12 PAGE 3   
+
+ 117   2        }
+ 118   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    744    ----
+   CONSTANT SIZE    =    322    ----
+   XDATA SIZE       =     10    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      1    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

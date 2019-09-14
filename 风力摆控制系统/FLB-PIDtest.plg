@@ -1,0 +1,37 @@
+<html>
+<body>
+<pre>
+<h1>礦ision Build Log</h1>
+<h2>Project:</h2>
+D:\Downloads\pzx\毕设-成品+参考资料-风力摆\风力摆干净无错版\FLB-PIDtest.uvproj
+Project File Date:  04/30/2018
+
+<h2>Output:</h2>
+Build target 'Target 1'
+compiling Angle.c...
+--- Error: failed to execute 'C:\Keil\BIN\C51.EXE'
+Target not created
+Build target 'Target 1'
+compiling Angle.c...
+--- Error: failed to execute 'C:\Keil\BIN\C51.EXE'
+Target not created
+Build target 'Target 1'
+compiling Angle.c...
+--- Error: failed to execute 'C:\Keil\BIN\C51.EXE'
+Target not created
+Build target 'Target 1'
+compiling Angle.c...
+--- Error: failed to execute 'C:\Keil\BIN\C51.EXE'
+Target not created
+Build target 'Target 1'
+compiling Angle.c...
+--- Error: failed to execute 'C:\Keil\BIN\C51.EXE'
+Target not created
+Build target 'Target 1'
+compiling Angle.c...
+--- Error: failed to execute 'C:\Keil\BIN\C51.EXE'
+Target not created
+Build target 'Target 1'
+compiling Angle.c...
+--- Error: failed to execute 'C:\Keil\BIN\C51.EXE'
+Target not created

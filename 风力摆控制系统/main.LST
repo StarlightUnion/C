@@ -1,0 +1,78 @@
+C51 COMPILER V9.59.0.0   MAIN                                                              04/23/2019 16:38:12 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN main.OBJ
+COMPILER INVOKED BY: C:\Users\lsh\Desktop\keil5\C51\BIN\C51.EXE main.c LARGE OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND
+                    - TABS(2)
+
+line level    source
+
+   1          //-------------------------------------------------------
+   2          //                 风力摆控制系统
+   3          //
+   4          //      主控：IAP15W4K58S4  |   时钟：24MHz
+   5          //    工作电压：3.3~5v    |   18650*2并联
+   6          //      电机：720空心杯*4   |   桨：75mm*4
+   7          //    传感器：MPU6050     |   屏幕：UART串口屏    
+   8          //-------------------------------------------------------
+   9          #include <STC15Wxxxx.H>
+  10          #include <stdio.h>
+  11          #include <math.h>
+  12          #include "comm.h"
+  13          #include "angle.h"
+  14          #include "pwm.h"
+  15          #include "mode.h"
+  16          #include "key.h"
+  17          //---------------------------------------------
+  18          //             全局变量定义
+  19          //---------------------------------------------
+  20          uchar  uart3_buf[35];            //串口屏待发送数据缓冲区
+  21          uchar  uart3_buf2[35];
+  22          float  Angle_X,Angle_Y;            //X、Y轴的角度
+  23          //----------------------------------------------
+  24          //                 main函数
+  25          //----------------------------------------------
+  26          void main()
+  27          {
+  28   1        GPIO_Init();       //IO口初始化
+  29   1        Uart_Init();       //串口初始化
+  30   1            SendString("CLS(0);DS16(105,15,'风力摆控制系统',2,0);DS16(40,85,'X轴角度：',15,0);DS16(40,115,'Y轴角
+             -度：',15,0);DS16(40,145,'摆动幅度：',15,0);DS16(40,175,'摆动角度：',15,0);DS16(40,205,'圆周方向',15,0);PL(300,75,20,75,1
+             -);PL(300,110,20,110,1);PL(300,140,20,140,1);PL(300,170,20,170,1);PL(300,200,20,200,1);PL(300,230,20,230,1);PL(20,75,20,2
+             -30,1);PL(300,75,300,230,1);PL(160,75,160,230,1););\r\n");
+  31   1        Timer0_Init();       //定时器0初始化
+  32   1        PWM_MOUDLE_Init();     //PWM模组初始化
+  33   1        PID_M1_Init();       //电机1PID参数初始化
+  34   1        PID_M2_Init();       //电机2PID参数初始化
+  35   1        
+  36   1        ET0 = 1;             //开定时器0中断
+  37   1        IE2 |= 0x01;       //开串口2中断
+  38   1      
+  39   1        while(1)
+  40   1        {   
+  41   2          if(Screen_flag == 1)       //角度刷新
+  42   2          {
+  43   3            Screen_flag = 0;
+  44   3            sprintf(uart3_buf,"DS16(210,85,' %.2f° ',5,0);\r\n",Angle_X); SendString(uart3_buf);     
+  45   3            sprintf(uart3_buf,"DS16(210,115,' %.2f° ',5,0);\r\n",Angle_Y); SendString(uart3_buf);      
+  46   3          }
+  47   2          Key_Scan();              //键盘扫描
+  48   2        } 
+  49   1      }
+
+
+C51 COMPILER V9.59.0.0   MAIN                                                              04/23/2019 16:38:12 PAGE 2   
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    146    ----
+   CONSTANT SIZE    =    444    ----
+   XDATA SIZE       =     78    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,130 @@
+C51 COMPILER V9.59.0.0   PWM                                                               04/23/2019 16:38:12 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE PWM
+OBJECT MODULE PLACED IN pwm.OBJ
+COMPILER INVOKED BY: C:\Users\lsh\Desktop\keil5\C51\BIN\C51.EXE pwm.c LARGE OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND 
+                    -TABS(2)
+
+line level    source
+
+   1          #include <STC15Wxxxx.H>
+   2          #include "pwm.h"
+   3          //--------------------------
+   4          //  PWM模块初始化/配置
+   5          //--------------------------
+   6          void PWM_MOUDLE_Init(void)
+   7          {
+   8   1          P_SW2 |= 0x80;                  //使能访问XSFR(扩展RAM区的特殊功能寄存器)
+   9   1          PWMCFG = 0x00;                  //配置PWM的输出初始电平为低电平
+  10   1          PWMCKS = 0x0e;                  //选择PWM的时钟为Fosc/(15+1)  24MHz/16=1.5MHz=0.667us
+  11   1          PWMC   = CYCLE;                 //设置PWM周期  1/1.5*1500=1000us=1ms Motor_Frequence=1KHz
+  12   1          PWMCR  = 0x0f;      //使能PWM信号输出：PWM2/3/4/5端口为PWM输出，受波形发生器控制
+  13   1          //控制电机1//
+  14   1          PWM2T1 = 0x0000;                //设置PWM2第1次反转的PWM计数
+  15   1          PWM2T2 = 0x0003;                //设置PWM2第2次反转的PWM计数，占空比为(PWM2T2-PWM2T1)/PWMC            
+             -                    
+  16   1          PWM2CR = 0x00;                  //选择PWM2输出到P3.7,不使能PWM2中断
+  17   1          //控制电机2//
+  18   1          PWM3T1 = 0x0000;                //设置PWM3第1次反转的PWM计数
+  19   1          PWM3T2 = 0x0003;                //设置PWM3第2次反转的PWM计数，占空比为(PWM3T2-PWM3T1)/PWMC            
+             -                    
+  20   1          PWM3CR = 0x00;                  //选择PWM3输出到P2.1,不使能PWM3中断
+  21   1          //控制电机3//
+  22   1          PWM4T1 = 0x0000;                //设置PWM4第1次反转的PWM计数
+  23   1          PWM4T2 = 0x0003;                //设置PWM4第2次反转的PWM计数，占空比为(PWM4T2-PWM4T1)/PWMC            
+             -                    
+  24   1          PWM4CR = 0x00;                  //选择PWM4输出到P2.2,不使能PWM4中断
+  25   1          //控制电机4//
+  26   1          PWM5T1 = 0x0000;                //设置PWM5第1次反转的PWM计数
+  27   1          PWM5T2 = 0x0003;                //设置PWM5第2次反转的PWM计数，占空比为(PWM5T2-PWM5T1)/PWMC            
+             -                    
+  28   1          PWM5CR = 0x00;                  //选择PWM5输出到P2.3,不使能PWM5中断 
+  29   1          //总使能//
+  30   1          PWMCR |= 0x80;                  //使能PWM模块
+  31   1          P_SW2 &= ~0x80;                 //禁止访问XSFR        
+  32   1      }
+  33          //-----------------------------
+  34          //       设定电机1占空比
+  35          //-----------------------------
+  36          void SetPWM_M1(long DUTY_1)     
+  37          {
+  38   1          //单路使能//
+  39   1          P_SW2 |= 0x80; 
+  40   1          PWMCR  = 0x0f;      //使能PWM信号输出：PWM2/3/4/5端口为PWM输出，受波形发生器控制
+  41   1          //控制电机1//
+  42   1          PWM2T1 = 0x0000;                //设置PWM2第1次反转的PWM计数
+  43   1          PWM2T2 = DUTY_1;                //设置PWM2第2次反转的PWM计数，占空比为(PWM2T2-PWM2T1)/PWMC            
+             -                    
+  44   1          PWM2CR = 0x00;                  //选择PWM2输出到P3.7,不使能PWM2中断
+  45   1          //总使能//
+  46   1          PWMCR |= 0x80;                  //使能PWM模块
+  47   1          P_SW2 &= ~0x80;
+  48   1      }
+  49          //-----------------------------
+C51 COMPILER V9.59.0.0   PWM                                                               04/23/2019 16:38:12 PAGE 2   
+
+  50          //       设定电机2占空比
+  51          //-----------------------------
+  52          void SetPWM_M2(long DUTY_2)     
+  53          {
+  54   1          //单路使能//
+  55   1          P_SW2 |= 0x80; 
+  56   1          PWMCR  = 0x0f;
+  57   1          //控制电机2//
+  58   1          PWM3T1 = 0x0000;                //设置PWM3第1次反转的PWM计数
+  59   1          PWM3T2 = DUTY_2;                //设置PWM3第2次反转的PWM计数，占空比为(PWM3T2-PWM3T1)/PWMC            
+             -                    
+  60   1          PWM3CR = 0x00;                  //选择PWM3输出到P2.1,不使能PWM3中断
+  61   1          //总使能//
+  62   1          PWMCR |= 0x80;                  //使能PWM模块
+  63   1          P_SW2 &= ~0x80; 
+  64   1      }
+  65          //-----------------------------
+  66          //       设定电机3占空比
+  67          //-----------------------------
+  68          void SetPWM_M3(long DUTY_3)     
+  69          {
+  70   1          //单路使能//
+  71   1          P_SW2 |= 0x80; 
+  72   1          PWMCR  = 0x0f;
+  73   1          //控制电机3//
+  74   1          PWM4T1 = 0x0000;                //设置PWM4第1次反转的PWM计数
+  75   1          PWM4T2 = DUTY_3;        //设置PWM4第2次反转的PWM计数，占空比为(PWM4T2-PWM4T1)/PWMC                      
+             -          
+  76   1          PWM4CR = 0x00;                  //选择PWM4输出到P2.2,不使能PWM4中断
+  77   1          //总使能//
+  78   1          PWMCR |= 0x80;                  //使能PWM模块
+  79   1          P_SW2 &= ~0x80; 
+  80   1      }
+  81          //-----------------------------
+  82          //       设定电机4占空比
+  83          //-----------------------------
+  84          void SetPWM_M4(long DUTY_4)     
+  85          {
+  86   1          //单路使能//
+  87   1          P_SW2 |= 0x80; 
+  88   1          PWMCR  = 0x0f;
+  89   1          //控制电机4//
+  90   1          PWM5T1 = 0x0000;                //设置PWM5第1次反转的PWM计数
+  91   1          PWM5T2 = DUTY_4;            //设置PWM5第2次反转的PWM计数，占空比为(PWM5T2-PWM5T1)/PWMC                  
+             -              
+  92   1          PWM5CR = 0x00;                  //选择PWM5输出到P2.3,不使能PWM5中断
+  93   1          //总使能//
+  94   1          PWMCR |= 0x80;                  //使能PWM模块
+  95   1          P_SW2 &= ~0x80; 
+  96   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    209    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
