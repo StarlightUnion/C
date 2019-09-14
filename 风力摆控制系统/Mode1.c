@@ -48,13 +48,13 @@ void Timer0_service()  interrupt 1
 
 	switch(CurMode)	         //根据CurMode值选择执行的问题
 	{	
-		case 1: Mode_1(); Mode_led =~ Mode_led; break;		 //第一问
-		case 2: Mode_2(); Mode_led =~ Mode_led; break;		 //第二问
-		case 3: Mode_3(); Mode_led =~ Mode_led; break;		 //第三问
-		case 4: Mode_4(); Mode_led =~ Mode_led; break;		 //第四问
-		case 5: Mode_5(); Mode_led =~ Mode_led; break;		 //第五问
-		case 6: Mode_6(); Mode_led =~ Mode_led; break;		 //第六问
-		default: break;							 //第三个发挥要求未做
+		case 1: Mode_1(); Mode_led =~ Mode_led; break;
+		case 2: Mode_2(); Mode_led =~ Mode_led; break;
+		case 3: Mode_3(); Mode_led =~ Mode_led; break;
+		case 4: Mode_4(); Mode_led =~ Mode_led; break;
+		case 5: Mode_5(); Mode_led =~ Mode_led; break;
+		case 6: Mode_6(); Mode_led =~ Mode_led; break;		 
+		default: break;
 	}			
 }
 /*------------------------------------------------*
@@ -81,7 +81,7 @@ void Mode_1(void)		     //待添加
 	PID_M1_SetKp(36);				  	   /*----------------------------------------*/
 	PID_M1_SetKi(0.198);	 			   /*每进一次本函数都是一次独立的PID控制过程 */
 	PID_M1_SetKd(1100);				   /*----------------------------------------*/
-	PID_M2_SetPoint(0);		               //M2设定参数
+	PID_M2_SetPoint(0);			               //M2设定参数
 	PID_M2_SetKp(36);    
 	PID_M2_SetKi(0.198);		
 	PID_M2_SetKd(1100); 	 	
@@ -433,14 +433,14 @@ int PID_M2_PosLocCalc(float NextPoint)
 //------------------------------------------
 void MotorMove(long pwm1,long pwm2)
 {
-	if(pwm1 > 0)			      /*风摆由正角度开始起摆*/
+	if(pwm1 > 0)			      /*由正角度开始起摆*/
 	{						/*向左摆动（角度为正），误差为正，pid运算结果(pwm1)为正*/
 	 	SetPWM_M1(1L);		      /*向右摆动（角度为负），误差为负，pid运算结果(pwm1)为负*/
-		SetPWM_M3(pwm1);	      	/*pwm为正，表示风摆左摆，电机3动作，电机1停机*/
-	}						/*pwm为负，表示风摆右摆，电机1动作，电机3停机*/
-	else if(pwm1 < 0)				/*硬件情况：*/
-	{						/*风摆向左摆，Y轴角度为正*/
-	 	SetPWM_M1(abs(pwm1));		/*风摆向后摆，X轴角度为正*/
+		SetPWM_M3(pwm1);	      	/*pwm为正，表示左摆，电机3动作，电机1停机*/
+	}						/*pwm为负，表示右摆，电机1动作，电机3停机*/
+	else if(pwm1 < 0)
+	{						/*向左摆，Y轴角度为正*/
+	 	SetPWM_M1(abs(pwm1));		/*向后摆，X轴角度为正*/
 		SetPWM_M3(1L);			/*反之*/
 	}						/*电机只可动作与停机，无反转功能*/
 	if(pwm2 > 0)

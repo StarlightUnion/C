@@ -1,10 +1,9 @@
-C51 COMPILER V9.59.0.0   KEY                                                               04/23/2019 16:38:12 PAGE 1   
+C51 COMPILER V9.00   KEY                                                                   05/11/2019 00:09:49 PAGE 1   
 
 
-C51 COMPILER V9.59.0.0, COMPILATION OF MODULE KEY
+C51 COMPILER V9.00, COMPILATION OF MODULE KEY
 OBJECT MODULE PLACED IN key.OBJ
-COMPILER INVOKED BY: C:\Users\lsh\Desktop\keil5\C51\BIN\C51.EXE key.c LARGE OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND 
-                    -TABS(2)
+COMPILER INVOKED BY: D:\Keil_v5\C51\BIN\C51.EXE key.c LARGE OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND TABS(2)
 
 line level    source
 
@@ -52,19 +51,19 @@ line level    source
   42   3            if(CurMode > 6)  CurMode = 1;          //最高题目6
   43   3            switch(CurMode)
   44   3            {
-  45   4              case(1):  SendString("DS24(105,45,'基本要求 1',4,0);\r\n"); break;
-  46   4              case(2):  SendString("DS24(105,45,'基本要求 2',4,0);\r\n"); break;
-  47   4              case(3):  SendString("DS24(105,45,'基本要求 3',4,0);\r\n"); break;
-  48   4              case(4):  SendString("DS24(105,45,'基本要求 4',4,0);\r\n"); break;
-  49   4              case(5):  SendString("DS24(105,45,'发挥要求 1',4,0);\r\n"); break;
-  50   4              case(6):  SendString("DS24(105,45,'发挥要求 2',4,0);\r\n"); break;
+  45   4              case(1):  SendString("DS24(105,45,'发挥要求',4,0);\r\n"); break;
+  46   4              case(2):  SendString("DS24(105,45,'发挥要求',4,0);\r\n"); break;
+  47   4              case(3):  SendString("DS24(105,45,'发挥要求',4,0);\r\n"); break;
+  48   4              case(4):  SendString("DS24(105,45,'发挥要求',4,0);\r\n"); break;
+  49   4              case(5):  SendString("DS24(105,45,'基本要求',4,0);\r\n"); break;
+  50   4              case(6):  SendString("DS24(105,45,'基本要求',4,0);\r\n"); break;
   51   4              default:  break;
   52   4            } 
   53   3          }
   54   2          while(0 == Key_ModeChange);     
-C51 COMPILER V9.59.0.0   KEY                                                               04/23/2019 16:38:12 PAGE 2   
-
   55   2        }
+C51 COMPILER V9.00   KEY                                                                   05/11/2019 00:09:49 PAGE 2   
+
   56   1        /*转向切换*/
   57   1        if(0 == Key_TurnChange)
   58   1        {
@@ -126,15 +125,15 @@ line level    source
  114   3            SendString(uart3_buf2);      //摆角参数显示
  115   3          }
  116   2          while(0 == Key_AngleDown);
-C51 COMPILER V9.59.0.0   KEY                                                               04/23/2019 16:38:12 PAGE 3   
-
  117   2        }
+C51 COMPILER V9.00   KEY                                                                   05/11/2019 00:09:49 PAGE 3   
+
  118   1      }
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    744    ----
-   CONSTANT SIZE    =    322    ----
+   CODE SIZE        =    718    ----
+   CONSTANT SIZE    =    186    ----
    XDATA SIZE       =     10    ----
    PDATA SIZE       =   ----    ----
    DATA SIZE        =   ----    ----

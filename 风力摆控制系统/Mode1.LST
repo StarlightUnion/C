@@ -1,10 +1,9 @@
-C51 COMPILER V9.59.0.0   MODE1                                                             04/23/2019 16:38:12 PAGE 1   
+C51 COMPILER V9.00   MODE1                                                                 05/11/2019 00:09:49 PAGE 1   
 
 
-C51 COMPILER V9.59.0.0, COMPILATION OF MODULE MODE1
+C51 COMPILER V9.00, COMPILATION OF MODULE MODE1
 OBJECT MODULE PLACED IN Mode1.OBJ
-COMPILER INVOKED BY: C:\Users\lsh\Desktop\keil5\C51\BIN\C51.EXE Mode1.c LARGE OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEN
-                    -D TABS(2)
+COMPILER INVOKED BY: D:\Keil_v5\C51\BIN\C51.EXE Mode1.c LARGE OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND TABS(2)
 
 line level    source
 
@@ -58,15 +57,15 @@ line level    source
   48   1      
   49   1        switch(CurMode)          //根据CurMode值选择执行的问题
   50   1        { 
-  51   2          case 1: Mode_1(); Mode_led =~ Mode_led; break;     //第一问
-  52   2          case 2: Mode_2(); Mode_led =~ Mode_led; break;     //第二问
-  53   2          case 3: Mode_3(); Mode_led =~ Mode_led; break;     //第三问
-  54   2          case 4: Mode_4(); Mode_led =~ Mode_led; break;     //第四问
-C51 COMPILER V9.59.0.0   MODE1                                                             04/23/2019 16:38:12 PAGE 2   
+  51   2          case 1: Mode_1(); Mode_led =~ Mode_led; break;
+  52   2          case 2: Mode_2(); Mode_led =~ Mode_led; break;
+  53   2          case 3: Mode_3(); Mode_led =~ Mode_led; break;
+  54   2          case 4: Mode_4(); Mode_led =~ Mode_led; break;
+  55   2          case 5: Mode_5(); Mode_led =~ Mode_led; break;
+C51 COMPILER V9.00   MODE1                                                                 05/11/2019 00:09:49 PAGE 2   
 
-  55   2          case 5: Mode_5(); Mode_led =~ Mode_led; break;     //第五问
-  56   2          case 6: Mode_6(); Mode_led =~ Mode_led; break;     //第六问
-  57   2          default: break;              //第三个发挥要求未做
+  56   2          case 6: Mode_6(); Mode_led =~ Mode_led; break;     
+  57   2          default: break;
   58   2        }     
   59   1      }
   60          /*------------------------------------------------*
@@ -93,7 +92,7 @@ line level    source
   81   1        PID_M1_SetKp(36);              /*----------------------------------------*/
   82   1        PID_M1_SetKi(0.198);           /*每进一次本函数都是一次独立的PID控制过程 */
   83   1        PID_M1_SetKd(1100);          /*----------------------------------------*/
-  84   1        PID_M2_SetPoint(0);                  //M2设定参数
+  84   1        PID_M2_SetPoint(0);                    //M2设定参数
   85   1        PID_M2_SetKp(36);    
   86   1        PID_M2_SetKi(0.198);    
   87   1        PID_M2_SetKd(1100);     
@@ -126,9 +125,9 @@ line level    source
  114   1        MoveTimeCnt += 20;                   //20ms计算调整一次
  115   1        Normalization = (float)MoveTimeCnt / priod;  //单摆周期归一化：即每次运算时时间累计量对单摆周期的占比
  116   1        Omega = 2.0*3.14159*Normalization;       //Omega归一化，一个摆动周期内的
-C51 COMPILER V9.59.0.0   MODE1                                                             04/23/2019 16:38:12 PAGE 3   
-
  117   1        A = atan((R/70.0f))*57.2958f;                //摆动长度幅值转换为摆动角度幅值，84(cm)为万向节点离地高度，
+C51 COMPILER V9.00   MODE1                                                                 05/11/2019 00:09:49 PAGE 3   
+
              -实际调试下来选取70为佳
  118   1        set_y = A*sin(Omega);                        //目标值呈正弦规律变化
  119   1              
@@ -190,9 +189,9 @@ line level    source
  174   1        PID_M2_SetKp(36);    
  175   1        PID_M2_SetKi(0.198);    
  176   1        PID_M2_SetKd(1100); 
-C51 COMPILER V9.59.0.0   MODE1                                                             04/23/2019 16:38:12 PAGE 4   
-
  177   1        
+C51 COMPILER V9.00   MODE1                                                                 05/11/2019 00:09:49 PAGE 4   
+
  178   1        M1.PWM = PID_M1_PosLocCalc(M1.CurPos);         //电机1、3 PID运算
  179   1        M2.PWM = PID_M2_PosLocCalc(M2.CurPos);           //电机2、4 PID运算
  180   1        
@@ -254,9 +253,9 @@ line level    source
  236   1        float A = 0.0;
  237   1        float phase = 0.0;
  238   1        float Normalization = 0.0;
-C51 COMPILER V9.59.0.0   MODE1                                                             04/23/2019 16:38:12 PAGE 5   
-
  239   1        float Omega = 0.0;
+C51 COMPILER V9.00   MODE1                                                                 05/11/2019 00:09:49 PAGE 5   
+
  240   1        
  241   1        MoveTimeCnt += 20;           
  242   1        Normalization = (float)MoveTimeCnt / priod;  
@@ -318,9 +317,9 @@ line level    source
  298   1         
  299   1        PID_M1_SetPoint(set_y);                      //M1设定参数
  300   1        PID_M1_SetKp(36);              
-C51 COMPILER V9.59.0.0   MODE1                                                             04/23/2019 16:38:12 PAGE 6   
-
  301   1        PID_M1_SetKi(0.198);           
+C51 COMPILER V9.00   MODE1                                                                 05/11/2019 00:09:49 PAGE 6   
+
  302   1        PID_M1_SetKd(1100);          
  303   1        PID_M2_SetPoint(set_x);                  //M2设定参数
  304   1        PID_M2_SetKp(36);    
@@ -382,9 +381,9 @@ line level    source
  360   1        M1PID.Integral = dKii;      //设定积分系数：M1、M3
  361   1      }
  362          void PID_M1_SetKd(float dKdd)
-C51 COMPILER V9.59.0.0   MODE1                                                             04/23/2019 16:38:12 PAGE 7   
-
  363          { 
+C51 COMPILER V9.00   MODE1                                                                 05/11/2019 00:09:49 PAGE 7   
+
  364   1        M1PID.Derivative = dKdd;    //设定微分系数：M1、M3
  365   1      }
  366          //------------------------------------------
@@ -446,9 +445,9 @@ line level    source
  422   1        M2PID.LastError = iError;       //误差更新  
  423   1        return(int)(  M2PID.Proportion   * iError             
  424   1                      + M2PID.Integral   * M2PID.SumError   //离散PID计算 
-C51 COMPILER V9.59.0.0   MODE1                                                             04/23/2019 16:38:12 PAGE 8   
-
  425   1                      + M2PID.Derivative * dError);
+C51 COMPILER V9.00   MODE1                                                                 05/11/2019 00:09:49 PAGE 8   
+
  426   1      }
  427          //------------------------------------------
  428          //功能：电机底层驱动函数
@@ -459,14 +458,14 @@ line level    source
  433          //------------------------------------------
  434          void MotorMove(long pwm1,long pwm2)
  435          {
- 436   1        if(pwm1 > 0)            /*风摆由正角度开始起摆*/
+ 436   1        if(pwm1 > 0)            /*由正角度开始起摆*/
  437   1        {           /*向左摆动（角度为正），误差为正，pid运算结果(pwm1)为正*/
  438   2          SetPWM_M1(1L);          /*向右摆动（角度为负），误差为负，pid运算结果(pwm1)为负*/
- 439   2          SetPWM_M3(pwm1);          /*pwm为正，表示风摆左摆，电机3动作，电机1停机*/
- 440   2        }           /*pwm为负，表示风摆右摆，电机1动作，电机3停机*/
- 441   1        else if(pwm1 < 0)       /*硬件情况：*/
- 442   1        {           /*风摆向左摆，Y轴角度为正*/
- 443   2          SetPWM_M1(abs(pwm1));   /*风摆向后摆，X轴角度为正*/
+ 439   2          SetPWM_M3(pwm1);          /*pwm为正，表示左摆，电机3动作，电机1停机*/
+ 440   2        }           /*pwm为负，表示右摆，电机1动作，电机3停机*/
+ 441   1        else if(pwm1 < 0)
+ 442   1        {           /*向左摆，Y轴角度为正*/
+ 443   2          SetPWM_M1(abs(pwm1));   /*向后摆，X轴角度为正*/
  444   2          SetPWM_M3(1L);      /*反之*/
  445   2        }           /*电机只可动作与停机，无反转功能*/
  446   1        if(pwm2 > 0)
@@ -483,7 +482,7 @@ line level    source
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =   4022    ----
+   CODE SIZE        =   4028    ----
    CONSTANT SIZE    =   ----    ----
    XDATA SIZE       =     78     136
    PDATA SIZE       =   ----    ----

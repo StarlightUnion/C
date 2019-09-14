@@ -42,12 +42,12 @@ void Key_Scan(void)
 			if(CurMode > 6)  CurMode = 1;          //最高题目6
 			switch(CurMode)
 			{
-				case(1):  SendString("DS24(105,45,'基本要求 1',4,0);\r\n"); break;
-				case(2):  SendString("DS24(105,45,'基本要求 2',4,0);\r\n"); break;
-				case(3):  SendString("DS24(105,45,'基本要求 3',4,0);\r\n"); break;
-				case(4):  SendString("DS24(105,45,'基本要求 4',4,0);\r\n"); break;
-				case(5):  SendString("DS24(105,45,'发挥要求 1',4,0);\r\n"); break;
-				case(6):  SendString("DS24(105,45,'发挥要求 2',4,0);\r\n"); break;
+				case(1):  SendString("DS24(105,45,'发挥要求',4,0);\r\n"); break;
+				case(2):  SendString("DS24(105,45,'发挥要求',4,0);\r\n"); break;
+				case(3):  SendString("DS24(105,45,'发挥要求',4,0);\r\n"); break;
+				case(4):  SendString("DS24(105,45,'发挥要求',4,0);\r\n"); break;
+				case(5):  SendString("DS24(105,45,'基本要求',4,0);\r\n"); break;
+				case(6):  SendString("DS24(105,45,'基本要求',4,0);\r\n"); break;
 				default:  break;
 			}	
 		}
